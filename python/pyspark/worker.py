@@ -108,12 +108,15 @@ def wrap_grouped_map_pandas_udf(f, return_type, argspec, runner_conf):
 
     def wrapped(key_series, value_series):
         import pandas as pd
+        import pyarrow as pa
+        
+        value_names = [value._name for value in value_series]
 
         if len(argspec.args) == 1:
-            result = f(pd.concat(value_series, axis=1))
+            result = f(pa.Table.from_arrays(value_series, names=value_names))
         elif len(argspec.args) == 2:
             key = tuple(s[0] for s in key_series)
-            result = f(key, pd.concat(value_series, axis=1))
+            result = f(key, pa.Table.from_arrays(value_series, names=value_names))
 
         if not isinstance(result, pd.DataFrame):
             raise TypeError("Return type of the user-defined function should be "
